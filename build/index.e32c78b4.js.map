@@ -1,0 +1,1 @@
+{"mappings":"AAAAA,QAAQC,IAAIC","sources":["./src/index.js"],"sourcesContent":["console.log(window)"],"names":["console","log","window"],"version":3,"file":"index.e32c78b4.js.map"}
