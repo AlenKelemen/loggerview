@@ -11,10 +11,11 @@ const startDate = elt("input", { type: "datetime-local" });
 const deviceSelector = elt(
   "select",
   {},
-  elt("option", { value: "177" }, "Korčula 1"),//
+  elt("option", { value: "177" }, "Korčula 1"), //
+  elt("option", { value: "178" }, "Korčula 2") // fake for test
 );
-req(deviceSelector.value)
-deviceSelector.addEventListener('change', evt => req(evt.target.value));
+req(deviceSelector.value);
+deviceSelector.addEventListener("change", (evt) => req(evt.target.value));
 startDate.value = dayjs().subtract(1, "days").format("YYYY-MM-DDTHH:mm");
 const endDate = elt("input", { type: "datetime-local" });
 endDate.value = dayjs().format("YYYY-MM-DDTHH:mm");
@@ -46,28 +47,21 @@ const form = elt("form", {}, fielset);
 document.body.appendChild(form);
 // form for wait for data
 //display wait graphics
-const progress = elt(
-  "span",
-  { className: "progress" }
-);
+const progress = elt("span", { className: "progress" });
 //info
-const info = elt("p", {}, "Preuzimanje mjerenja...");//
-const wait = elt(
-  "fieldset",
-  {},
- info,
- progress
-);
+const info = elt("p", {}, "Preuzimanje mjerenja..."); //
+const wait = elt("fieldset", {}, info, progress);
 document.body.appendChild(elt("form", {}, wait));
 
 //form for data required
 
 //report
-const report = elt("p", {}, "");//
+const report = elt("p", {}, ""); //
 //table
 const tbody = elt("tbody", {});
 const tbl = elt(
-  "table",{},
+  "table",
+  {},
   elt(
     "thead",
     {},
@@ -94,39 +88,57 @@ const download = elt(
 //graph
 const canvas = elt("canvas", { height: "100%", width: "100%" });
 
-const resultFielset = elt("fieldset", {}, 
-progress,  
-report,
-tbl,
-download,
-canvas
+const resultFielset = elt(
+  "fieldset",
+  {},
+  progress,
+  report,
+  tbl,
+  download,
+  canvas
 );
-const result = elt("form", {style:'display:none'}, resultFielset);
+const result = elt("form", { style: "display:none" }, resultFielset);
 document.body.appendChild(result);
 
-
-function req (deviceId){
+function req(deviceId) {
+  console.log("requesting data for:", deviceId);
   const pressurePromise = fetch(
     "https://gis.edc.hr/imagisth/threport/pressure_th_mt?device_id=eq." +
       deviceId
   );
   const flowPromise = fetch(
-    "https://gis.edc.hr/imagisth/threport/flow_mt_th"//more devices ?
+    "https://gis.edc.hr/imagisth/threport/flow_mt_th" //more devices ?
   );
   Promise.all([pressurePromise, flowPromise]).then((r) => {
     Promise.all([r[0].json(), r[1].json()]).then((r) => {
-      const m =[];//measures
+      const m = []; //measures
       //console.log(r)
-      for(const value of r[0]){
-        m.push({timestamp:value.date_taken,pressure:value.pressure})
+      for (const value of r[0]) {
+        m.push({ timestamp: value.date_taken, pressure: value.pressure });
       }
       //console.log(m)
-      for (const value of m){
-        const f = r[1].filter(x => x.date_taken === value.timestamp)
-        const hi = f.find(x => x.category_id == 10);
-        const low = f.find(x => x.category_id == 11);
-        console.log(f,hi.raw_value,low.raw_value)
+      for (const value of m) {
+        const f = r[1].filter((x) => x.date_taken === value.timestamp);
+        const hi = f.find((x) => x.category_id == 11);
+        const low = f.find((x) => x.category_id == 10);
+        value.hi = hi.raw_value;
+        value.low = low.raw_value;
       }
-    })
-  })
+      //32 bit low
+      for (const value of m) {
+        value.low = value.hi * 65536 + value.low;
+      }
+      //sum flow m3
+      for (const value of m) {
+        value.flowSum_m3 = value.low * 0.01;
+        value.flowSum_m3 = Math.round((value.flowSum_m3 + Number.EPSILON) * 100) / 100//round
+      }
+      //diff flow l/s
+      for (let i = 1; i < m.length; i++) {
+        m[i].flowDiff = ((m[i].flowSum_m3 - m[i - 1].flowSum_m3) * 4) / 3.6;
+        m[i].flowDiff = Math.round((m[i].flowDiff + Number.EPSILON) * 100) / 100//round
+      }
+      console.log(m);
+    });
+  });
 }
