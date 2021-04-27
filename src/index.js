@@ -1,38 +1,28 @@
 import { elt } from "./util";
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
 import "@fortawesome/fontawesome-pro/css/fontawesome.css";
 import "@fortawesome/fontawesome-pro/css/regular.min.css";
-
+dayjs.extend(utc);
 //header
 const header = elt("h1", {}, "Mjerenja na vodoopskrbnoj mreži");
 document.body.appendChild(header);
-//start&end datetime
-const startDate = elt("input", { type: "datetime-local" });
+
+//input form
 const deviceSelector = elt(
   "select",
   {},
   elt("option", { value: "177" }, "Korčula 1"), //
   elt("option", { value: "178" }, "Korčula 2") // fake for test
 );
-req(deviceSelector.value);
-deviceSelector.addEventListener("change", (evt) => req(evt.target.value));
-startDate.value = dayjs().subtract(1, "days").format("YYYY-MM-DDTHH:mm");
-const endDate = elt("input", { type: "datetime-local" });
-endDate.value = dayjs().format("YYYY-MM-DDTHH:mm");
-//make startDate & endDate correct
-startDate.addEventListener("change", (evt) => {
-  if (startDate.value > endDate.value)
-    startDate.value = dayjs(endDate.value)
-      .subtract(1, "hour")
-      .format("YYYY-MM-DDTHH:mm");
+const startDate = elt("input", {
+  type: "datetime-local",
+  value: dayjs().subtract(1, "days").format("YYYY-MM-DDTHH:mm"),
 });
-endDate.addEventListener("change", (evt) => {
-  if (endDate.value < startDate.value)
-    endDate.value = dayjs(startDate.value)
-      .add(1, "hour")
-      .format("YYYY-MM-DDTHH:mm");
+const endDate = elt("input", {
+  type: "datetime-local",
+  value: dayjs().format("YYYY-MM-DDTHH:mm"),
 });
-//form for input
 const fielset = elt(
   "fieldset",
   {},
@@ -45,66 +35,21 @@ const fielset = elt(
 );
 const form = elt("form", {}, fielset);
 document.body.appendChild(form);
-// form for wait for data
-//display wait graphics
-const progress = elt("span", { className: "progress" });
-//info
-const info = elt("p", {}, "Preuzimanje mjerenja..."); //
-const wait = elt("fieldset", {}, info, progress);
-document.body.appendChild(elt("form", {}, wait));
+//req data on input change
+req()//default
+form.addEventListener("change", (evt) => {
+  req();//request data
+})
 
-//form for data required
-
-//report
-const report = elt("p", {}, ""); //
-//table
-const tbody = elt("tbody", {});
-const tbl = elt(
-  "table",
-  {},
-  elt(
-    "thead",
-    {},
-    elt(
-      "tr",
-      {},
-      elt("th", {}, "Datum"),
-      elt("th", {}, "Vrijeme"),
-      elt("th", {}, "Tlak bar"),
-      elt("th", {}, "Protok l/s")
-    )
-  ),
-  tbody
-);
-//download
-const download = elt(
-  "a",
-  {
-    href: "data:text/plain;charset=utf-8," + encodeURIComponent(""),
-    download: "Mjerenja.csv",
-  },
-  "Preuzmi..."
-);
-//graph
-const canvas = elt("canvas", { height: "100%", width: "100%" });
-
-const resultFielset = elt(
-  "fieldset",
-  {},
-  progress,
-  report,
-  tbl,
-  download,
-  canvas
-);
-const result = elt("form", { style: "display:none" }, resultFielset);
-document.body.appendChild(result);
-
-function req(deviceId) {
-  console.log("requesting data for:", deviceId);
+function req() {
+  console.log(
+    "requesting data for:",
+    deviceSelector.value,
+    startDate.value,
+    endDate.value
+  );
   const pressurePromise = fetch(
-    "https://gis.edc.hr/imagisth/threport/pressure_th_mt?device_id=eq." +
-      deviceId
+    "https://gis.edc.hr/imagisth/threport/pressure_th_mt?device_id=eq." + deviceSelector.value
   );
   const flowPromise = fetch(
     "https://gis.edc.hr/imagisth/threport/flow_mt_th" //more devices ?
@@ -112,33 +57,12 @@ function req(deviceId) {
   Promise.all([pressurePromise, flowPromise]).then((r) => {
     Promise.all([r[0].json(), r[1].json()]).then((r) => {
       const m = []; //measures
-      //console.log(r)
+      console.log(r)
       for (const value of r[0]) {
-        m.push({ timestamp: value.date_taken, pressure: value.pressure });
+        const a = dayjs.utc(value.date_taken)
+        const l =a.local()
+        console.log(l.format())
       }
-      //console.log(m)
-      for (const value of m) {
-        const f = r[1].filter((x) => x.date_taken === value.timestamp);
-        const hi = f.find((x) => x.category_id == 11);
-        const low = f.find((x) => x.category_id == 10);
-        value.hi = hi.raw_value;
-        value.low = low.raw_value;
-      }
-      //32 bit low
-      for (const value of m) {
-        value.low = value.hi * 65536 + value.low;
-      }
-      //sum flow m3
-      for (const value of m) {
-        value.flowSum_m3 = value.low * 0.01;
-        value.flowSum_m3 = Math.round((value.flowSum_m3 + Number.EPSILON) * 100) / 100//round
-      }
-      //diff flow l/s
-      for (let i = 1; i < m.length; i++) {
-        m[i].flowDiff = ((m[i].flowSum_m3 - m[i - 1].flowSum_m3) * 4) / 3.6;
-        m[i].flowDiff = Math.round((m[i].flowDiff + Number.EPSILON) * 100) / 100//round
-      }
-      console.log(m);
-    });
-  });
+    })
+  })
 }
