@@ -35,34 +35,98 @@ const fielset = elt(
 );
 const form = elt("form", {}, fielset);
 document.body.appendChild(form);
-//req data on input change
-req()//default
+
+//status info
+const status = elt("p", {}, "Preuzimam podatke ...");
+document.body.appendChild(status);
+
+//tabular data report
+const tbody = elt("tbody", {});
+const tbl = elt(
+  "table",
+  { style: "display:none" },
+  elt(
+    "thead",
+    {},
+    elt(
+      "tr",
+      {},
+      elt("th", {}, "Datum"),
+      elt("th", {}, "Vrijeme"),
+      elt("th", {}, "Tlak bar"),
+      elt("th", {}, "Protok l/s")
+    )
+  ),
+  tbody
+);
+document.body.appendChild(tbl);
+//--
+
+//req data on input form  change
+req(); //for initial page
 form.addEventListener("change", (evt) => {
-  req();//request data
-})
+  req(); //request data
+});
 
 function req() {
+  /*
+   reads value from UX: deviceSelector,startDate,endDate;
+   sets display style 'none' on req received: status
+   call on change
+  */
+  console.clear();
   console.log(
-    "requesting data for:",
+    "...requesting data for: ",
     deviceSelector.value,
     startDate.value,
     endDate.value
   );
+  status.style.display = "inline";
+  status.innerText = "Preuzimam podatke ...";
+  tbl.style.display = "none";
   const pressurePromise = fetch(
-    "https://gis.edc.hr/imagisth/threport/pressure_th_mt?device_id=eq." + deviceSelector.value
-  );
+    "https://gis.edc.hr/imagisth/threport/pressure_th_mt?device_id=eq." +
+      deviceSelector.value
+  ); // dates not used in req
   const flowPromise = fetch(
     "https://gis.edc.hr/imagisth/threport/flow_mt_th" //more devices ?
-  );
+  ); // device && dates not used in req
   Promise.all([pressurePromise, flowPromise]).then((r) => {
     Promise.all([r[0].json(), r[1].json()]).then((r) => {
-      const m = []; //measures
-      console.log(r)
+      const m = []; //measures calculated
       for (const value of r[0]) {
-        const a = dayjs.utc(value.date_taken)
-        const l =a.local()
-        console.log(l.format())
+        const f = r[1].filter((x) => x.date_taken === value.date_taken); // 2 flow messages for date_taken
+        const hi = f.find((x) => x.category_id == 11); // hi bit
+        let low = f.find((x) => x.category_id == 10); //low bit
+        low = hi.raw_value * 65536 + low.raw_value; //sum values
+        low = Math.round((low * 0.01 + Number.EPSILON) * 100) / 100; //round value 2 decimals
+        const t = dayjs.utc(value.date_taken.split("+")[0]).local(); //.format('DD.MM.YYYY HH:mm')// convert to local time
+        m.push({ timestamp: t, pressure: value.pressure, flowSum: low });
       }
-    })
-  })
+      for (let i = 1; i < m.length; i++) {
+        m[i].timeDiff = m[i].timestamp.diff(m[i - 1].timestamp) / 60000; //miliseconds -> min
+        m[i].flowDiff =
+          ((m[i].flowSum - m[i - 1].flowSum) * 60) / m[i].timeDiff / 3.6; // l/s
+      }
+      const p = period(m);
+      if (p.length === 0) status.innerText = "Nema podataka!";
+      else {
+        status.style.display = "none";
+        tbl.style.display = "table";
+      }
+    });
+  });
+}
+
+function period(m) {
+  //reads startDate & endDate from UX
+  const p = [];
+  for (const value of m) {
+    if (
+      value.timestamp.isAfter(dayjs(startDate.value)) &&
+      value.timestamp.isBefore(dayjs(endDate.value))
+    )
+      p.push(value);
+  }
+  return p;
 }
