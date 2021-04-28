@@ -1,8 +1,8 @@
 import { elt } from "./util";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
-import "@fortawesome/fontawesome-pro/css/fontawesome.css";
-import "@fortawesome/fontawesome-pro/css/regular.min.css";
+/* import "@fortawesome/fontawesome-pro/css/fontawesome.css";
+import "@fortawesome/fontawesome-pro/css/regular.min.css"; */
 dayjs.extend(utc);
 //header
 const header = elt("h1", {}, "Mjerenja na vodoopskrbnoj mreži");
@@ -143,6 +143,7 @@ function req() {
         status.style.display = "none";
         dwlForm.style.display = "block";
         download.href = download.href + encodeURIComponent(csv(p));
+        download.download = `${deviceSelector.options[deviceSelector.selectedIndex].text}_${dayjs(startDate.value).format('DD.MM.YYYY HH:mm')}_${dayjs(endDate.value).format('DD.MM.YYYY HH:mm')}.csv`
         tblForm.style.display = "block";
         fillTbl(tbody, p);
       }
@@ -163,7 +164,6 @@ function csv(p) {
     stanje = value.flowSum.toFixed(0);
     s += `${value.timestamp.format("DD.MM.YYYY")};${value.timestamp.format("HH:mm:ss")};${pstring};${fstring};${fSumString};${stanje}\n`;
   }
-  console.log(s);
   return s;
 }
 function fillTbl(tbody, p) {
