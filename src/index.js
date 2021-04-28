@@ -44,7 +44,7 @@ document.body.appendChild(status);
 const tbody = elt("tbody", {});
 const tbl = elt(
   "table",
-  { style: "display:none" },
+  {},
   elt(
     "thead",
     {},
@@ -59,7 +59,9 @@ const tbl = elt(
   ),
   tbody
 );
-document.body.appendChild(tbl);
+const tblForm = elt("form", {style: "display:none"}, elt("fieldset", {}, tbl));
+document.body.appendChild(tblForm);
+
 //--
 
 //req data on input form  change
@@ -83,7 +85,7 @@ function req() {
   );
   status.style.display = "inline";
   status.innerText = "Preuzimam podatke ...";
-  tbl.style.display = "none";
+  tblForm.style.display = "none";
   const pressurePromise = fetch(
     "https://gis.edc.hr/imagisth/threport/pressure_th_mt?device_id=eq." +
       deviceSelector.value
@@ -109,15 +111,35 @@ function req() {
           ((m[i].flowSum - m[i - 1].flowSum) * 60) / m[i].timeDiff / 3.6; // l/s
       }
       const p = period(m);
-      if (p.length === 0) status.innerText = "Nema podataka!";
+      if (p.length === 0) {
+        status.innerText = "Nema podataka!";
+        tbody.innerHTML = "";
+      }
       else {
         status.style.display = "none";
-        tbl.style.display = "table";
+        tblForm.style.display = "block";
+        fillTbl(tbody, p);
       }
     });
   });
 }
 
+function fillTbl(tbody, p) {
+  tbody.innerHTML = "";
+  p.reverse(); //last data first to show
+  for (const value of p) {
+    tbody.appendChild(
+      elt(
+        "tr",
+        {},
+        elt("td", {}, value.timestamp.format("DD.MM.YYYY")),
+        elt("td", {}, value.timestamp.format("HH:mm:ss")),
+        elt("td", {}, value.pressure.toFixed(2)),
+        elt("td", {}, value.flowDiff.toFixed(2))
+      )
+    );
+  }
+}
 function period(m) {
   //reads startDate & endDate from UX
   const p = [];
