@@ -46,7 +46,7 @@ const download = elt(
   "a",
   {
     href: "data:text/plain;charset=utf-8," + encodeURIComponent(""),
-    download: "Mjerenja.csv",
+    download: `${deviceSelector.options[deviceSelector.selectedIndex].text}_${dayjs(startDate.value).format('DD.MM.YYYY HH:mm')}_${dayjs(endDate.value).format('DD.MM.YYYY HH:mm')}.csv`,
   },
   "Preuzmi..."
 );
