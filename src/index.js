@@ -39,6 +39,25 @@ document.body.appendChild(form);
 //status info
 const status = elt("p", {}, "Preuzimam podatke ...");
 document.body.appendChild(status);
+//--
+
+//download data
+const download = elt(
+  "a",
+  {
+    href: "data:text/plain;charset=utf-8," + encodeURIComponent(""),
+    download: "Mjerenja.csv",
+  },
+  "Preuzmi..."
+);
+const dwlForm = elt(
+  "form",
+  { style: "display:none" },
+  elt("fieldset", {}, download)
+);
+document.body.appendChild(dwlForm);
+
+//--
 
 //tabular data report
 const tbody = elt("tbody", {});
@@ -59,9 +78,12 @@ const tbl = elt(
   ),
   tbody
 );
-const tblForm = elt("form", {style: "display:none"}, elt("fieldset", {}, tbl));
+const tblForm = elt(
+  "form",
+  { style: "display:none" },
+  elt("fieldset", {}, tbl)
+);
 document.body.appendChild(tblForm);
-
 //--
 
 //req data on input form  change
@@ -83,9 +105,12 @@ function req() {
     startDate.value,
     endDate.value
   );
+  //UX results
   status.style.display = "inline";
   status.innerText = "Preuzimam podatke ...";
   tblForm.style.display = "none";
+  dwlForm.style.display = "none";
+  //--
   const pressurePromise = fetch(
     "https://gis.edc.hr/imagisth/threport/pressure_th_mt?device_id=eq." +
       deviceSelector.value
@@ -114,16 +139,33 @@ function req() {
       if (p.length === 0) {
         status.innerText = "Nema podataka!";
         tbody.innerHTML = "";
-      }
-      else {
+      } else {
         status.style.display = "none";
+        dwlForm.style.display = "block";
+        download.href = download.href + encodeURIComponent(csv(p));
         tblForm.style.display = "block";
         fillTbl(tbody, p);
       }
     });
   });
 }
-
+function csv(p) {
+  //values as csv text
+  let s = "Datum;Vrijeme;Tlak bar;Protok l/s;Sumarni protok m3;Stanje vodomjera m3\n";
+  const flowStart = p[0].flowSum;
+  for (const value of p) {
+    let pstring = value.pressure.toFixed(2);
+    pstring = pstring.replace(".", ",");
+    let fstring = value.flowDiff.toFixed(2);
+    fstring = fstring.replace(".", ",");
+    fSumString = (value.flowSum - flowStart).toFixed(2);
+    fSumString = fSumString.replace(".", ",");
+    stanje = value.flowSum.toFixed(0);
+    s += `${value.timestamp.format("DD.MM.YYYY")};${value.timestamp.format("HH:mm:ss")};${pstring};${fstring};${fSumString};${stanje}\n`;
+  }
+  console.log(s);
+  return s;
+}
 function fillTbl(tbody, p) {
   tbody.innerHTML = "";
   p.reverse(); //last data first to show
