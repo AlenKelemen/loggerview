@@ -68,11 +68,11 @@ const canvas = elt("canvas", { height: "100%", width: "100%" });
 const graphForm = elt(
   "form",
   { style: "display:none" },
-  elt("fieldset", { style: "width:600px" }, canvas)
+  elt("fieldset", {}, canvas)
 );
 document.body.appendChild(graphForm);
 const ctx = canvas.getContext("2d");
-const config = {
+const chart = new Chart(ctx, {
   type: "line",
   data: {
     datasets: [
@@ -96,9 +96,8 @@ const config = {
         },
       ],
     },
-  }
-};
-const chart = new Chart(ctx,config);
+  },
+});
 
 //--
 //tabular data report
@@ -203,7 +202,6 @@ function req() {
         ).format("DD.MM.YYYY HH:mm")}.csv`;
         //graph
         graphForm.style.display = "block";
-        const chart = new Chart(ctx,config);
         graphIt(p);
         //table
         tblForm.style.display = "block";
@@ -213,15 +211,21 @@ function req() {
   });
 }
 function graphIt(p) {
-  chart.destroy();
   
-  for (const value of p) {
+  chart.data.datasets.forEach((dataset) => {
+    dataset.data=[]
+  });
+  chart.update();
+  console.log('chart', chart.data.datasets[0],p)
+  for (const value of p){
     chart.data.datasets[0].data.push({
-      x: value.timestamp.format("DD/MM/YYYY HH:mm:ss"),
+      x: value.timestamp.format('DD/MM/YYYY HH:mm:ss'),
       y: value.pressure,
     });
     chart.update();
+    
   }
+  
 }
 function csv(p) {
   //values as csv text
