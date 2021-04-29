@@ -140,10 +140,13 @@ function req() {
         status.innerText = "Nema podataka!";
         tbody.innerHTML = "";
       } else {
+        //status
         status.style.display = "none";
+        //download
         dwlForm.style.display = "block";
-        download.href = download.href + encodeURIComponent(csv(p));
+        download.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(csv(p));
         download.download = `${deviceSelector.options[deviceSelector.selectedIndex].text}_${dayjs(startDate.value).format('DD.MM.YYYY HH:mm')}_${dayjs(endDate.value).format('DD.MM.YYYY HH:mm')}.csv`
+        //table
         tblForm.style.display = "block";
         fillTbl(tbody, p);
       }
