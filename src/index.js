@@ -204,7 +204,12 @@ function req() {
         //graph
         graphForm.style.display = "block";
         const chart = new Chart(ctx,config);
-        graphIt(p);
+
+
+        //graphIt(p);
+
+
+        
         //table
         tblForm.style.display = "block";
         fillTbl(tbody, p);
