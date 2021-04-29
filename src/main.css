@@ -6,6 +6,9 @@ h1 {
 table {
   width: unset;
 }
+td,th {
+  text-align: center;
+}
 @media (max-width: 1024px) {
   table {
     width: 100%;
@@ -24,5 +27,3 @@ table {
 fieldset {
   margin-left: 1em;
 }
-
-/**/
