@@ -46,7 +46,11 @@ const download = elt(
   "a",
   {
     href: "data:text/plain;charset=utf-8," + encodeURIComponent(""),
-    download: `${deviceSelector.options[deviceSelector.selectedIndex].text}_${dayjs(startDate.value).format('DD.MM.YYYY HH:mm')}_${dayjs(endDate.value).format('DD.MM.YYYY HH:mm')}.csv`,
+    download: `${
+      deviceSelector.options[deviceSelector.selectedIndex].text
+    }_${dayjs(startDate.value).format("DD.MM.YYYY HH:mm")}_${dayjs(
+      endDate.value
+    ).format("DD.MM.YYYY HH:mm")}.csv`,
   },
   "Preuzmi..."
 );
@@ -130,22 +134,35 @@ function req() {
         const t = dayjs.utc(value.date_taken.split("+")[0]).local(); //.format('DD.MM.YYYY HH:mm')// convert to local time
         m.push({ timestamp: t, pressure: value.pressure, flowSum: low });
       }
-      for (let i = 1; i < m.length; i++) {
-        m[i].timeDiff = m[i].timestamp.diff(m[i - 1].timestamp) / 60000; //miliseconds -> min
-        m[i].flowDiff =
-          ((m[i].flowSum - m[i - 1].flowSum) * 60) / m[i].timeDiff / 3.6; // l/s
+      for (let i = 0; i < m.length; i++) {
+        if (i === 0) {//first row, can't calculate diff, set 0
+          m[i].timeDiff = 0;
+          m[i].flowDiff = 0;
+        } else {
+          m[i].timeDiff = m[i].timestamp.diff(m[i - 1].timestamp) / 60000; //miliseconds -> min
+          m[i].flowDiff =
+            ((m[i].flowSum - m[i - 1].flowSum) * 60) / m[i].timeDiff / 3.6; // l/s
+        }
       }
       const p = period(m);
       if (p.length === 0) {
         status.innerText = "Nema podataka!";
         tbody.innerHTML = "";
       } else {
+        //console
+        console.clear();
+        console.log(p);
         //status
         status.style.display = "none";
         //download
         dwlForm.style.display = "block";
-        download.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(csv(p));
-        download.download = `${deviceSelector.options[deviceSelector.selectedIndex].text}_${dayjs(startDate.value).format('DD.MM.YYYY HH:mm')}_${dayjs(endDate.value).format('DD.MM.YYYY HH:mm')}.csv`
+        download.href =
+          "data:text/plain;charset=utf-8," + encodeURIComponent(csv(p));
+        download.download = `${
+          deviceSelector.options[deviceSelector.selectedIndex].text
+        }_${dayjs(startDate.value).format("DD.MM.YYYY HH:mm")}_${dayjs(
+          endDate.value
+        ).format("DD.MM.YYYY HH:mm")}.csv`;
         //table
         tblForm.style.display = "block";
         fillTbl(tbody, p);
@@ -155,9 +172,10 @@ function req() {
 }
 function csv(p) {
   //values as csv text
-  let s = "Datum;Vrijeme;Tlak bar;Protok l/s;Sumarni protok m3;Stanje vodomjera m3\n";
+  let s =
+    "Datum;Vrijeme;Tlak bar;Protok l/s;Sumarni protok m3;Stanje vodomjera m3\n";
   const flowStart = p[0].flowSum;
-  for (const value of p) {
+  for (const [index, value] of p.entries()) {
     let pstring = value.pressure.toFixed(2);
     pstring = pstring.replace(".", ",");
     let fstring = value.flowDiff.toFixed(2);
@@ -165,7 +183,9 @@ function csv(p) {
     fSumString = (value.flowSum - flowStart).toFixed(2);
     fSumString = fSumString.replace(".", ",");
     stanje = value.flowSum.toFixed(0);
-    s += `${value.timestamp.format("DD.MM.YYYY")};${value.timestamp.format("HH:mm:ss")};${pstring};${fstring};${fSumString};${stanje}\n`;
+    s += `${value.timestamp.format("DD.MM.YYYY")};${value.timestamp.format(
+      "HH:mm:ss"
+    )};${pstring};${fstring};${fSumString};${stanje}\n`;
   }
   return s;
 }
