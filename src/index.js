@@ -203,13 +203,13 @@ function req() {
         ).format("DD.MM.YYYY HH:mm")}.csv`;
         //graph
         graphForm.style.display = "block";
-        const chart = new Chart(ctx,config);
+        //const chart = new Chart(ctx,config);
 
 
         //graphIt(p);
 
 
-        
+
         //table
         tblForm.style.display = "block";
         fillTbl(tbody, p);
