@@ -2,6 +2,7 @@ import { elt } from "./util";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import Chart from "chart.js";
+import "chartjs-adapter-dayjs";
 
 /* import "@fortawesome/fontawesome-pro/css/fontawesome.css";
 import "@fortawesome/fontawesome-pro/css/regular.min.css"; */
@@ -65,28 +66,13 @@ document.body.appendChild(dwlForm);
 //--
 // graph
 const canvas = elt("canvas", { height: "100%", width: "100%" });
-const graphForm = elt(
-  "form",
-  { style: "display:none" },
-  elt("fieldset", { style: "width:600px" }, canvas)
-);
+const graphForm = elt("form", {}, elt("fieldset", {}, canvas));
 document.body.appendChild(graphForm);
 const ctx = canvas.getContext("2d");
 const config = {
   type: "line",
   data: {
-    datasets: [
-      {
-        label: "tlak bar",
-        yAxisID: "Pressure",
-        fill: false,
-        backgroundColor: "white",
-        borderColor: "red",
-        borderWidth: 1,
-        radius: 2,
-        data: [],
-      },
-    ],
+    datasets: [{}],
   },
   options: {
     scales: {
@@ -96,10 +82,9 @@ const config = {
         },
       ],
     },
-  }
+  },
 };
-const chart = new Chart(ctx,config);
-
+let chart = new Chart(canvas, config);
 //--
 //tabular data report
 const tbody = elt("tbody", {});
@@ -130,7 +115,7 @@ document.body.appendChild(tblForm);
 //req data on input form  change
 req(); //for initial page
 form.addEventListener("change", (evt) => {
-  req(); //request data
+  req();
 });
 //--
 function req() {
@@ -151,6 +136,7 @@ function req() {
   status.innerText = "Preuzimam podatke ...";
   tblForm.style.display = "none";
   dwlForm.style.display = "none";
+  graphForm.style.display = "none";
   //--
   const pressurePromise = fetch(
     "https://gis.edc.hr/imagisth/threport/pressure_th_mt?device_id=eq." +
@@ -203,13 +189,7 @@ function req() {
         ).format("DD.MM.YYYY HH:mm")}.csv`;
         //graph
         graphForm.style.display = "block";
-        //const chart = new Chart(ctx,config);
-
-
-        //graphIt(p);
-
-
-
+        graphIt(p, chart);
         //table
         tblForm.style.display = "block";
         fillTbl(tbody, p);
@@ -218,15 +198,16 @@ function req() {
   });
 }
 function graphIt(p) {
-  chart.destroy();
-  
-  for (const value of p) {
+  chart.data.labels = [];
+  chart.data.datasets[0].data =[];
+  chart.update();
+  for (const v of p){
     chart.data.datasets[0].data.push({
-      x: value.timestamp.format("DD/MM/YYYY HH:mm:ss"),
-      y: value.pressure,
-    });
-    chart.update();
+      x : v.timestamp.format(),
+      y :v.pressure
+    })
   }
+  chart.update();
 }
 function csv(p) {
   //values as csv text
@@ -249,8 +230,8 @@ function csv(p) {
 }
 function fillTbl(tbody, p) {
   tbody.innerHTML = "";
-  p.reverse(); //last data first to show
-  for (const value of p) {
+  const rp= p.slice().reverse(); //last data first to show
+  for (const value of rp) {
     tbody.appendChild(
       elt(
         "tr",
