@@ -76,11 +76,15 @@ const config = {
   },
   options: {
     scales: {
-      x: [
+      x: 
         {
           type: "time",
+          time: {
+            displayFormats: {
+                quarter: 'MMM YYYY'
+            }
+        }
         },
-      ],
     },
   },
 };
@@ -203,7 +207,7 @@ function graphIt(p) {
   chart.update();
   for (const v of p){
     chart.data.datasets[0].data.push({
-      x : v.timestamp.format(),
+      x : v.timestamp,
       y :v.pressure
     })
   }
