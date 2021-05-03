@@ -72,19 +72,56 @@ const ctx = canvas.getContext("2d");
 const config = {
   type: "line",
   data: {
-    datasets: [{}],
+    datasets: [
+      {
+        label: "Protok l/s",
+        borderColor: "blue",
+        yAxisID: "y",
+        tension: 0.1,
+        borderWidth: 1.2,
+      },
+      {
+        label: "Tlak bar",
+        borderColor: "red",
+        yAxisID: "y1",
+        tension: 0.1,
+        borderWidth: 0.8,
+      },
+    ],
   },
   options: {
     scales: {
-      x: 
-        {
-          type: "time",
-          time: {
-            displayFormats: {
-                quarter: 'MMM YYYY'
-            }
-        }
+      x: {
+        type: "time",
+        time: {
+          displayFormats: {
+            millisecond: "DD HH:mm",
+            second: "DD HH:mm",
+            minute: "DD HH:mm",
+            hour: "DD HH:mm",
+            day: "DD HH:mm",
+            week: "DD HH:mm",
+            month: "DD HH:mm",
+            quarter: "DD HH:mm",
+            year: "DD HH:mm",
+          },
         },
+      },
+      y: {
+        type: "linear",
+        point: { radius: 5 },
+        display: true,
+        position: "left",
+      },
+      y1: {
+        type: "linear",
+        point: { radius: 5 },
+        display: true,
+        position: "right",
+        grid: {
+          drawOnChartArea: false,
+        },
+      },
     },
   },
 };
@@ -203,14 +240,21 @@ function req() {
 }
 function graphIt(p) {
   chart.data.labels = [];
-  chart.data.datasets[0].data =[];
+  chart.data.datasets[1].data = [];
+  chart.data.datasets[0].data = [];
   chart.update();
-  for (const v of p){
+  for (const v of p) {
     chart.data.datasets[0].data.push({
-      x : v.timestamp,
-      y :v.pressure
-    })
+      x: v.timestamp,
+      y: v.flowDiff,
+    });
+    chart.data.datasets[1].data.push({
+      x: v.timestamp,
+      y: v.pressure,
+    });
   }
+  chart.data.datasets[0].borderWidth=3
+  chart.data.datasets[1].borderWidth=0.8
   chart.update();
 }
 function csv(p) {
@@ -234,7 +278,7 @@ function csv(p) {
 }
 function fillTbl(tbody, p) {
   tbody.innerHTML = "";
-  const rp= p.slice().reverse(); //last data first to show
+  const rp = p.slice().reverse(); //last data first to show
   for (const value of rp) {
     tbody.appendChild(
       elt(

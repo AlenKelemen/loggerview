@@ -6,9 +6,18 @@ h1 {
 table {
   width: unset;
 }
-td,th {
+td,
+th {
   text-align: center;
 }
+fieldset {
+  margin-left: 1em;
+}
+fieldset label,
+fieldset legend {
+  display: inline-block;
+}
+
 @media (max-width: 1024px) {
   table {
     width: 100%;
@@ -23,7 +32,8 @@ td,th {
   table tr th {
     display: table-cell;
   }
-}
-fieldset {
-  margin-left: 1em;
+  fieldset label,
+  fieldset legend {
+    display: block;
+  }
 }
