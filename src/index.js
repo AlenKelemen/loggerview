@@ -1,7 +1,7 @@
 import { elt } from "./util";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
-import Chart from "chart.js";
+import Chart from "chart.js/auto";
 import "chartjs-adapter-dayjs";
 
 /* import "@fortawesome/fontawesome-pro/css/fontawesome.css";
