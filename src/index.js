@@ -55,12 +55,22 @@ const download = elt(
       endDate.value
     ).format("DD.MM.YYYY HH:mm")}.csv`,
   },
-  "Preuzmi..."
+  " Preuzmi tablicu / "
 );
+//download graph image
+const downloadGraph = elt(
+  "a",
+  {
+    href: "data:text/plain;charset=utf-8," + encodeURIComponent(""),
+    download: `graf.png`,
+  },
+  " Preuzmi graf"
+);
+
 const dwlForm = elt(
   "form",
   { style: "display:none" },
-  elt("fieldset", {}, download)
+  elt("fieldset", {}, download,downloadGraph)
 );
 document.body.appendChild(dwlForm);
 //--
@@ -90,6 +100,9 @@ const config = {
     ],
   },
   options: {
+    animation: {
+      onComplete: function() {}
+    },
     scales: {
       x: {
         type: "time",
@@ -125,7 +138,7 @@ const config = {
     },
   },
 };
-let chart = new Chart(canvas, config);
+const chart = new Chart(canvas, config);
 //--
 //tabular data report
 const tbody = elt("tbody", {});
@@ -228,6 +241,10 @@ function req() {
         }_${dayjs(startDate.value).format("DD.MM.YYYY HH:mm")}_${dayjs(
           endDate.value
         ).format("DD.MM.YYYY HH:mm")}.csv`;
+        //download graph image
+        chart.config.options.animation.onComplete= function (){
+          downloadGraph.href = chart.toBase64Image();
+        }
         //graph
         graphForm.style.display = "block";
         graphIt(p, chart);
@@ -304,3 +321,5 @@ function period(m) {
   }
   return p;
 }
+
+
